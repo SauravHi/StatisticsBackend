@@ -32,7 +32,24 @@ const userSchema = new mongoose.Schema({
 
 });
 
+// MongoDB Schema
+const companySchema = new mongoose.Schema({
+    name: String,
+    founded: Number,
+    headquarters: String,
+    sector: String,
+    industry: String,
+    info: String,
+    revenuePerYear: [{
+        year: Number,
+        revenue: Number, // In billion USD
+        employees: Number,
+        revenueGrowth: Number, // Year-over-Year Growth in Percentage
+    }]
+});
+
 const User = mongoose.model('User', userSchema);
+const Company = mongoose.model('Company', companySchema);
 
 // API to create user data
 app.post('/api/users', async (req, res) => {
@@ -46,40 +63,26 @@ app.post('/api/users', async (req, res) => {
     }
 });
 
-app.post('/api/users', async (req, res) => {
-    try {
-        // Check if request body is empty
-        if (!req.body) {
-            return res.status(400).send({ message: 'Request body is empty' });
-        }
-
-        // Destructure request body
-        const { name, phone, address } = req.body;
-
-        // Validate request body
-        if (!name || !phone || !address) {
-            return res.status(400).send({ message: 'Please fill in all fields' });
-        }
-
-        // Create new user
-        const user = new User({ name, phone, address });
-
-        // Save user to database
-        await user.save();
-
-        // Send response
-        res.status(201).send({ message: 'User created successfully', data: { ...user.toObject({ virtuals: false }), _id: user.id } });
-    } catch (error) {
-        // Send error response
-        res.status(500).send({ message: 'Error creating user', error: error.message });
-    }
+// Add new company data
+app.post('/api/company', async (req, res) => {
+    const { name, founded, headquarters, sector, industry, info, revenuePerYear } = req.body;
+    const newCompany = new Company({ name, founded, headquarters, sector, industry, info, revenuePerYear });
+    const savedCompany = await newCompany.save();
+    res.status(201).json(savedCompany); // Send JSON response with 201 Created status
+    res.send(newCompany);
 });
-
 
 // API to get all users
 app.get('/api/users', async (req, res) => {
     const users = await User.find();
     res.send(users);
+});
+
+// Get company data by name
+app.get('/api/company', async (req, res) => {
+    const name = req.query.name; // Search by company name
+    const company = await Company.findOne({ name });
+    res.send(company);
 });
 
 
